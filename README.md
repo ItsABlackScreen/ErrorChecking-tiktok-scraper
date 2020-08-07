@@ -15,7 +15,7 @@ The names of any user profiles with errors are written to a txt file for further
 3. check_recent_files  flag  
    Setting this flag to *True* just checks the newly downloaded files for errors, use this if the files have been moved. Make a copy of the history folder and enter the location in the script before downloading new files, as the script uses these previous history files for determining recent files. 
 4. Remove zero files   
-   This is the default behaviour of the script and removes the 'Zero' files from the json history, but doesn't move them from the folders unless the delete_files flag is set to *True*
+   This is the default behaviour of the script when flag 2 and 3 are set to false, and removes the 'Zero' files from the json history, but doesn't move them from the folders unless the delete_files flag is set to *True*
 5. self.check_size  
    Size in bytes where anything below would be considered a 'Zero' file, currently is set to 50kb which catches most errors. 
   
