@@ -11,9 +11,9 @@ The names of any user profiles with errors are written to a txt file for further
 1. delete_files flag  
     Setting the delete_files flag to *True* removes the 'Zero' files from the history json and into a predefined folder from which they can be manually deleted. 
 2. new_files flag  
-   Setting this flag to true checks if all the entries in the json history file and the downloaded directory match and removes any json entries that are not found in the profile folder. Use this when scraping entire profiles. Don't use this if the files have been moved to a different directory or some are deleted.
+   Setting this flag to *True* checks if all the entries in the json history file and the downloaded directory match and removes any json entries that are not found in the profile folder. Use this when scraping entire profiles. Don't use this if the files have been moved to a different directory or some are deleted.
 3. check_recent_files  flag  
-   Setting this flag to true just checks the newly downloaded files for errors, use this if the files have been moved. Make a copy of the history folder and enter the location in the script before downloading new files, as the script uses these previous history files for determining recent files. 
+   Setting this flag to *True* just checks the newly downloaded files for errors, use this if the files have been moved. Make a copy of the history folder and enter the location in the script before downloading new files, as the script uses these previous history files for determining recent files. 
 4. Remove zero files   
    This is the default behaviour of the script and removed the 'Zero' files form the json history, but doesn't move them from the folders unless the delete_files flag is set to *True*
 5. self.check_size  
