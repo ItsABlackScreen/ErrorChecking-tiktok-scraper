@@ -4,7 +4,9 @@
 
 Link to <a href= "https://github.com/drawrowfly/tiktok-scraper">tiktok-scraper</a>
 
-The script has four functions that can be used by changing the flags to True/False
+The script is mainly created to work with user profiles and not the hashtag or trend pages.  
+It has four functions that can be used by changing the flags to True/False:  
+The names of any user profiles with errors are written to a txt file for further batch downloading:   
 
 1. delete_files flag  
     Setting the delete_files flag to *True* removes the 'Zero' files from the history json and into a predefined folder from which they can be manually deleted. 
