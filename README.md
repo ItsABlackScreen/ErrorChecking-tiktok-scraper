@@ -23,6 +23,6 @@ The names of any user profiles with errors are written to a txt file for further
  
  1. folder_path = Set to the base folder contaning all the dowloaded tiktok profiles. 
  2. error_check_path = Set to the copy of the history folder. 
- 3. history_file_path = The full path to the 'tiktok_history.json' file.   
+ 3. history_file_path = The full path to the folder containing all the history json files.   
  4. delete_path = The path where the 'Zero' byte files would be moved to.   
  5. redownload_path = Full path to a text file where the script will write the names of profiles with error, for future batch downloading. (eg. /path/to/file/redownload.txt)  
