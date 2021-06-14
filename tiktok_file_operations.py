@@ -1,37 +1,33 @@
 import os
 import shutil
 import json
+import argparse
 from pathlib import Path
 
 
 class TikTokFiles:
     """A simple class to model various file operations on tiktok files."""
 
-    def __init__(
-        self,
-        folder_path,
-        error_check_path,
-        delete_path,
-        redownload_path,
-        history_file_path,
-        delete_files,
-        new_files,
-        check_recent_files,
-    ):
+    def __init__(self, args):
         """Initializing various attributes."""
 
-        self.start_folder = folder_path
-        self.error_check_folder = error_check_path
-        self.delete_path = delete_path
-        self.redownload_path = redownload_path
-        self.history_file_path = history_file_path
-        self.delete_flag = delete_files
-        self.new_file_flag = new_files
-        self.check_data_flag = check_recent_files
+        self.start_folder = Path(args.filepath)
+        self.redownload_path = Path(args.redownloadfile)
+        self.history_file_path = Path(args.historypath)
+        self.error_check_folder = (
+            Path(args.historybackup) if args.historybackup else args.historybackup
+        )
+        self.delete_path = Path(args.deletepath) if args.deletepath else args.deletepath
+        self.update_backup = args.updatebackup
+
+        self.delete_flag = args.delete
+        self.new_file_flag = args.newfiles
+        self.check_data_flag = args.checkrecent
 
         self.json_error_list = []
         self.redownload_file_list = []
         self.json_check_file_error_list = []
+        self.update_backup_list = []
 
         # Enter check_size in bytes (currently 50kb)
         self.check_size = 51200
@@ -43,12 +39,15 @@ class TikTokFiles:
         self._directory_walk()
         self._write_incomplete_jobs()
         self._print_results()
+        if self.update_backup:
+            self._update_backup()
 
     def _directory_walk(self):
         """Walking the folders under start folder."""
 
-        for folder, _, filenames in os.walk(self.start_folder):
+        for folder in [x.path for x in os.scandir(self.start_folder) if x.is_dir()]:
             folder_name = Path(folder)
+            filenames = [x.name for x in os.scandir(folder_name) if x.is_file()]
             self.folder_check_count += 1
 
             if self.new_file_flag:
@@ -64,20 +63,21 @@ class TikTokFiles:
                         continue
                     file_location = folder_name / Path(filename)
                     self._check_size(
-                        file_location, folder, filename, folder_name, size_error_list
+                        file_location,
+                        filename,
+                        folder_name,
+                        size_error_list,
                     )
                 if size_error_list:
                     self._load_history_files(filenames, folder_name, size_error_list)
 
-    def _check_size(
-        self, file_location, folder, filename, folder_name, size_error_list
-    ):
+    def _check_size(self, file_location, filename, folder_name, size_error_list):
         """Calculate the size of the files"""
         size = os.path.getsize(file_location)
         self.tested_count += 1
 
         if size < self.check_size:
-            print(folder + " has " + filename + " with size " + str(size) + " bytes")
+            print(f"{folder_name.name} has {filename} with size {size} bytes")
             self.redownload_file_list.append(folder_name.name)
 
             if self.delete_flag:
@@ -140,6 +140,7 @@ class TikTokFiles:
 
             if self.new_file_flag:
                 print(f"{folder_name} json contains {len(data)} files.")
+                self.update_backup_list.append(json_file)
                 new_set = set(data).difference([elem[:-4] for elem in filenames])
                 if new_set:
                     print(f"Errors Found : {new_set}")
@@ -191,6 +192,7 @@ class TikTokFiles:
             if new_downloads:
                 print(f"\n{folder_name.name} has {len(new_downloads)} new downloads")
                 print(new_downloads)
+                self.update_backup_list.append(json_file)
                 error_files = new_downloads.difference(
                     [elem[:-4] for elem in filenames]
                 )
@@ -214,6 +216,21 @@ class TikTokFiles:
                 for link in self.redownload_file_list:
                     file.write("%s\n" % link)
 
+    def _update_backup(self):
+        """
+        Updates the backup history dir, with primary history dir
+        """
+        l_backup = len(self.update_backup_list)
+        if self.update_backup_list:
+            print(f"\nUpdating backup with {l_backup} modified json files.")
+            for file in self.update_backup_list:
+                try:
+                    shutil.copy2(file, self.error_check_folder)
+                except Exception as err:
+                    print(f"Error occured : {err}")
+        else:
+            print(f"\nNo files changed, nothing to update.")
+
     def _print_results(self):
         """
         Print the final results of the operation.
@@ -233,32 +250,65 @@ class TikTokFiles:
                     f"Found errors with the following users: {self.redownload_file_list}"
                 )
         else:
-            print(f"Found {len(self.redownload_file_list)} files with errors.\n")
             print(f"Tested {self.tested_count} files.")
+            print(f"Found {len(self.redownload_file_list)} files with errors.\n")
 
 
 if __name__ == "__main__":
 
-    # Various paths used in the program
-    folder_path = Path("")
-    error_check_path = Path("")
-    history_file_path = Path("")
-    delete_path = Path("")
-    redownload_path = Path("")
-
-    # True/False values for various operations
-    delete_files = False
-    new_files = False
-    check_recent_files = False
-
-    tk = TikTokFiles(
-        folder_path,
-        error_check_path,
-        delete_path,
-        redownload_path,
-        history_file_path,
-        delete_files,
-        new_files,
-        check_recent_files,
+    my_parser = argparse.ArgumentParser(
+        fromfile_prefix_chars="+",
+        description="Error check titok-scraper for missing and empty files.",
     )
+    mutual_exc = my_parser.add_mutually_exclusive_group()
+
+    my_parser.add_argument(
+        "filepath",
+        help="Path to the directory in which downloaded files exist.",
+    )
+    my_parser.add_argument(
+        "historypath",
+        help="Path to directory containing history files.",
+    )
+    my_parser.add_argument(
+        "redownloadfile",
+        help="Path to txt file for writing users to.",
+    )
+
+    my_parser.add_argument(
+        "--historybackup", help="Path to directory with history backups"
+    )
+    my_parser.add_argument("--deletepath", help="Directory to move empty files to.")
+    my_parser.add_argument(
+        "-d", "--delete", action="store_true", help="Argument to delete empty files."
+    )
+    my_parser.add_argument(
+        "--updatebackup",
+        action="store_true",
+        help="Update the backup history files with the current history files.",
+    )
+
+    mutual_exc.add_argument(
+        "-nf",
+        "--newfiles",
+        action="store_true",
+        help="Argument to check new or entire profile.",
+    )
+    mutual_exc.add_argument(
+        "-cr",
+        "--checkrecent",
+        action="store_true",
+        help="Argument to check only recent files.",
+    )
+
+    args = my_parser.parse_args()
+
+    if args.checkrecent and not args.historybackup:
+        my_parser.error("--checkrecent requires --historybackup")
+    elif args.delete and not args.deletepath:
+        my_parser.error("--delete requires --deletepath")
+    elif args.updatebackup and not args.historybackup:
+        my_parser.error("--updatebackup requires --historybackup")
+
+    tk = TikTokFiles(args)
     tk.run_program()
